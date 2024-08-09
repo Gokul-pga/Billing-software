@@ -1,54 +1,6 @@
 const GenerateInvoice = require("../models/GenerateInvoice");
 const StockUpdate = require("../models/Stockupdate");
 
-// exports.addInvoice = async (req, res) => {
-//   const {
-//     ShopName,
-//     shopAddress,
-//     mobNum1,
-//     mobNum2,
-//     creator,
-//     selectedCustomer,
-//     findpendingamt,
-//     totalProductPriceNum,
-//     totalamount,
-//     billAmount,
-//     paidstatus,
-//     products,
-//   } = req.body;
-
-//   console.log(req.body, "Request Body");
-
-//   try {
-//     // Fetch the next bill number
-//     const invoiceCount = await GenerateInvoice.countDocuments();
-//     const nextBillNo = invoiceCount === 0 ? 1 : invoiceCount + 1;
-
-//     const newInvoice = new GenerateInvoice({
-//       ShopName,
-//       shopAddress,
-//       mobNum1,
-//       mobNum2,
-//       creator,
-//       customerName: selectedCustomer,
-//       pendingAmount: findpendingamt,
-//       grossAmount: totalProductPriceNum,
-//       totalAmount: totalamount,
-//       paidstatus,
-//       paidamount: billAmount,
-//       billNo: `${nextBillNo}`, // Ensure billNo is set correctly
-//       Invoice: products,
-//     });
-
-//     await newInvoice.save();
-
-//     console.log("Invoice added successfully");
-//     res.send({ status: "ok", data: newInvoice });
-//   } catch (error) {
-//     console.error("Error from addInvoice:", error);
-//     res.status(500).send({ status: "Error", error: error.message });
-//   }
-// };
 exports.addInvoice = async (req, res) => {
   const {
     ShopName,
@@ -63,6 +15,7 @@ exports.addInvoice = async (req, res) => {
     billAmount,
     paidstatus,
     products,
+    totalInvoicePaidAmount
   } = req.body;
 
   console.log(req.body, "Request Body");
@@ -83,6 +36,7 @@ exports.addInvoice = async (req, res) => {
       grossAmount: totalProductPriceNum,
       totalAmount: totalamount,
       paidstatus,
+      totalInvoicePiadAmount:totalInvoicePaidAmount,
       paidamount: billAmount,
       billNo: `${nextBillNo}`, // Ensure billNo is set correctly
       Invoice: products,
@@ -176,11 +130,13 @@ exports.addInvoice = async (req, res) => {
       const invoices = await GenerateInvoice.find({ paidstatus: "Paid" }, 'paidamount');
       const totalPaidAmount = invoices.reduce((sum, invoice) => sum + parseFloat(invoice.paidamount || 0), 0);
       res.send({ status: "ok", totalPaidAmount });
+      console.log(totalPaidAmount,"totalPaidAmount");
     } catch (error) {
       console.error("Failed to get total paid amount:", error);
       res.status(500).json({ error: "Internal server error while calculating total paid amount" });
     }
   };
+
   exports.updatePaidStatus = async (req, res) => {
     try {
       const { id } = req.body;

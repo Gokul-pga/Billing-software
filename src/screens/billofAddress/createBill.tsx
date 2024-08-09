@@ -73,6 +73,7 @@ const CreateBill = () => {
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
+    fetchTotalPAidAmount();
   }, []);
 
   const fetchCustomers = async () => {
@@ -176,6 +177,18 @@ const CreateBill = () => {
     }
   };
 
+
+  const [totalPaidAmount, settotalPaidAmount] = useState(0);
+  const fetchTotalPAidAmount = async () => {
+    try {
+      const response = await axios.get(api + '/api/invoice/totalpaidamount');
+      settotalPaidAmount(response.data.totalPaidAmount || 0);
+      console.log(response.data.totalPaidAmount, "Total Paid Amount fetched");
+    } catch (error) {
+      console.error('Error fetching Total Paid Amount:', error);
+    }
+  };
+
   const customerName = useSelector((state: RootState) => state.billing.name);
   // console.log(selectedCustomer,"customerN  ame");
 
@@ -183,60 +196,61 @@ const CreateBill = () => {
 
   const genereteInvoice = async () => {
     console.log('btn pressed');
-    const products = FetchCustomerFromBill.map(item => ({
-      productId: item._id,
-      productName: item.productName,
-      sellingPrice: item.sellingPrice,
-      quantity: item.quantity,
-      totalPrice: item.quantity * item.sellingPrice,
-      bag: item.bag,
-    }));
-
-    if(paidstatus == ""){
+    
+    if (paidstatus === "") {
       setErrmsg("Please select Paid Status");
-    }else{
-      try {
-        const findpendingamt = totalamount - billAmount;
-        const getinvois = await axios.get(api+
-          '/api/invoice/getInvoice',
-        );
+      return;
+    }
   
-        console.log(getinvois.data, 'invoice count');
-        setBillno(getinvois.data);
-        if (fetchPendingAmount === '0') {
-          console.log(findpendingamt, 'findpendingamt');
-        } else {
-          console.log(findpendingamt, 'adding findpendingamt');
-        }
-        const pendingamount = findpendingamt;
-        const updateresponse = await axios.post(api+
-          '/api/customer/updatePendingAmt',
-          {pendingamount, selectedCustomer},
-        );
-        const response = await axios.post(api+
-          '/api/invoice/addInvoice',
-          {
-            ShopName: 'SK VEGETABLES',
-            shopAddress: ' No.10 Transport Market, Karamadai, Coimbatore Dist.',
-            mobNum1: '098947 54308',
-            mobNum2: '090420 66533',
-            creator,
-            selectedCustomer,
-            findpendingamt,
-            totalProductPriceNum,
-            totalamount,
-            billAmount,
-            paidstatus: paidstatus,
-            products,
-          },
-        );
-        console.log(response, 'response from backend');
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
+    try {
+      await fetchTotalPAidAmount(); // Ensure totalPaidAmount is fetched before proceeding
+  
+      const products = FetchCustomerFromBill.map(item => ({
+        productId: item._id,
+        productName: item.productName,
+        sellingPrice: item.sellingPrice,
+        quantity: item.quantity,
+        totalPrice: item.quantity * item.sellingPrice,
+        bag: item.bag,
+      }));
+  
+      const findpendingamt = totalamount - billAmount;
+  
+      const getinvois = await axios.get(api + '/api/invoice/getInvoice');
+      console.log(getinvois.data, 'invoice count');
+      setBillno(getinvois.data);
+  
+      const pendingamount = findpendingamt;
+  
+      await axios.post(api + '/api/customer/updatePendingAmt', { pendingamount, selectedCustomer });
+  
+      // Ensure totalPaidAmount is a number
+      const totalInvoicePaidAmount = Number(totalPaidAmount) + Number(billAmount);
+      console.log(totalPaidAmount, "totalPaidAmount");
+      console.log(totalInvoicePaidAmount, "totalInvoicePaidAmount");
+  
+      const response = await axios.post(api + '/api/invoice/addInvoice', {
+        ShopName: 'SK VEGETABLES',
+        shopAddress: ' No.10 Transport Market, Karamadai, Coimbatore Dist.',
+        mobNum1: '098947 54308',
+        mobNum2: '090420 66533',
+        creator,
+        selectedCustomer,
+        findpendingamt,
+        totalProductPriceNum,
+        totalamount,
+        billAmount,
+        totalInvoicePaidAmount,
+        paidstatus,
+        products,
+      });
+  
+      // console.log(response, 'response from backend');
+    } catch (error) {
+      console.error('Error generating invoice:', error);
     }
   };
-
+  
   const handleCustomerChange = (value: string) => {
     setSelectedCustomer(value);
     setErrmsg('');

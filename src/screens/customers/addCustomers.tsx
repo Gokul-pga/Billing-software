@@ -272,7 +272,7 @@ const AddCustomers = () => {
         });
 
         console.log('Customer creation successful:', response.data);
-
+ 
         // Assuming you navigate to the CustomerDetails screen upon successful submission
       } catch (error) {
         console.error('Customer creation failed:', error);

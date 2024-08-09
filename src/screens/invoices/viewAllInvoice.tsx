@@ -82,8 +82,8 @@ const ViewAllInvoice = () => {
 
   return (
     <ScrollView style={{ backgroundColor: '#cccccc', width: '100%', padding: 10, }}>
-      <View style={{gap:10}}>
-        {invoice.map((item, id) => (
+      <View style={{ gap: 10,paddingBottom:20 }}>
+      {invoice.map((item, id) => (
           <View key={id} style={{ padding: 10, backgroundColor: '#fff', gap: 15,borderRadius:8 }}>
             <View
               style={{

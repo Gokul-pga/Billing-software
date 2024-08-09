@@ -1,33 +1,25 @@
 const CashFlow = require("../models/CashFlow");
 
-
-
-
-
-// Helper function to get or create a cash flow record
-const getOrCreateCashFlow = async () => {
-  let cashFlow = await CashFlow.findOne(); // Find an existing cash flow record
+// Helper function to get or create a cash flow record for a specific date
+const getOrCreateCashFlow = async (date) => {
+  let cashFlow = await CashFlow.findOne({ date });
   if (!cashFlow) {
-    cashFlow = new CashFlow(); // Create a new cash flow record if none exists
+    cashFlow = new CashFlow({ date });
   }
   return cashFlow;
 };
 
 exports.updateCashFlow = async (req, res) => {
   const { amount, type } = req.body;
+  const today = new Date().setHours(0, 0, 0, 0); // Start of today
 
   try {
     if (amount == null || !type) {
       return res.status(400).json({ status: "error", error: "Missing amount or type" });
     }
 
-    // Fetch the existing cash flow document
-    let cashFlow = await CashFlow.findOne();
-    if (!cashFlow) {
-      cashFlow = new CashFlow(); // Create a new document if it doesn't exist
-    }
+    let cashFlow = await getOrCreateCashFlow(today);
 
-    // Update the appropriate field
     if (type === "outgoing") {
       cashFlow.outgoingCash += amount;
     } else if (type === "borrowing") {
@@ -36,13 +28,14 @@ exports.updateCashFlow = async (req, res) => {
       return res.status(400).json({ status: "error", error: "Invalid type" });
     }
 
-    // Save the updated document
+    cashFlow.grandTotal = cashFlow.todaysIncome + cashFlow.closingAmount;
+
     await cashFlow.save();
 
     res.json({
       status: "ok",
       cashFlow: {
-        grandTotal: cashFlow.todaysIncome + cashFlow.closingAmount,
+        grandTotal: cashFlow.grandTotal,
         totalOutgoing: cashFlow.outgoingCash,
         totalBorrowing: cashFlow.borrowingCash,
         todaysIncome: cashFlow.todaysIncome,
@@ -55,108 +48,18 @@ exports.updateCashFlow = async (req, res) => {
   }
 };
 
-
-exports.getTotalCashFlow = async (req, res) => {
-  try {
-    const cashFlow = await CashFlow.findOne();
-
-    if (!cashFlow) {
-      return res.status(404).json({ status: "error", error: "Cash flow not found" });
-    }
-
-    res.json({
-      status: "ok",
-      cashFlow: {
-        
-        totalOutgoing: cashFlow.outgoingCash,
-        totalBorrowing: cashFlow.borrowingCash,
-        todaysIncome: cashFlow.todaysIncome,
-        closingAmount: cashFlow.closingAmount,
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching total cash flow:", error);
-    res.status(500).json({ status: "error", error: "Internal server error" });
-  }
-};
-
-exports.updateGrandTotal = async (req, res) => {
-  const { grandTotal } = req.body;
-
-  try {
-    if (grandTotal == null) {
-      return res.status(400).json({ status: "error", error: "Grand total is missing" });
-    }
-
-    const cashFlow = await getOrCreateCashFlow();
-    cashFlow.grandTotal = grandTotal;
-
-    await cashFlow.save();
-
-    res.json({
-      status: "ok",
-      grandTotal: cashFlow.grandTotal,
-    });
-  } catch (error) {
-    console.error("Error updating grand total:", error);
-    res.status(500).json({ status: "error", error: "Internal server error" });
-  }
-};
-
-exports.getGrandTotal = async (req, res) => {
-  try {
-    const cashFlow = await CashFlow.findOne();
-
-    if (!cashFlow) {
-      return res.status(404).json({ status: "error", error: "Cash flow not found" });
-    }
-
-    res.json({
-      status: "ok",
-      grandTotal: cashFlow.grandTotal,
-    });
-  } catch (error) {
-    console.error("Error fetching grand total:", error);
-    res.status(500).json({ status: "error", error: "Internal server error" });
-  }
-};
-
-exports.getBorrowingCash = async (req, res) => {
-  try {
-    const cashFlow = await CashFlow.findOne();
-
-    if (!cashFlow) {
-      return res.status(404).json({ status: "error", error: "Cash flow not found" });
-    }
-
-    res.json({
-      status: "ok",
-      borrowingCash: cashFlow.borrowingCash,
-    });
-  } catch (error) {
-    console.error("Error fetching borrowingCash:", error);
-    res.status(500).json({ status: "error", error: "Internal server error" });
-  }
-};
-
 exports.updateTodayIncome = async (req, res) => {
   const { todayIncome } = req.body;
+  const today = new Date().setHours(0, 0, 0, 0); // Start of today
 
   try {
     if (todayIncome == null) {
       return res.status(400).json({ status: "error", error: "Today's income is missing" });
     }
 
-    // Find or create the CashFlow document
-    let cashFlow = await CashFlow.findOne();
-    if (!cashFlow) {
-      cashFlow = new CashFlow();
-    }
+    let cashFlow = await getOrCreateCashFlow(today);
 
-    // Add the new income to the existing income
     cashFlow.todaysIncome += todayIncome;
-
-    // Update the grand total
     cashFlow.grandTotal = cashFlow.todaysIncome + cashFlow.closingAmount;
 
     await cashFlow.save();
@@ -172,38 +75,16 @@ exports.updateTodayIncome = async (req, res) => {
   }
 };
 
-
-exports.getTodayIncome = async (req, res) => {
-  try {
-    const cashFlow = await CashFlow.findOne();
-
-    if (!cashFlow) {
-      return res.status(404).json({ status: "error", error: "Cash flow not found" });
-    }
-
-    res.json({
-      status: "ok",
-      todaysIncome: cashFlow.todaysIncome,
-    });
-  } catch (error) {
-    console.error("Error fetching today's income:", error);
-    res.status(500).json({ status: "error", error: "Internal server error" });
-  }
-};
-
-exports.updateClosingAmount = async (req, res) => {
-  const { closingAmount } = req.body;
+exports.resetDailyValues = async (req, res) => {
+  const today = new Date().setHours(0, 0, 0, 0); // Start of today
 
   try {
-    if (closingAmount == null) {
-      return res.status(400).json({ status: "error", error: "Closing amount is missing" });
-    }
+    const cashFlow = await getOrCreateCashFlow(today);
 
-    const cashFlow = await getOrCreateCashFlow();
-    cashFlow.closingAmount = closingAmount;
-
-    // Update grand total
-    cashFlow.grandTotal = cashFlow.todaysIncome + cashFlow.closingAmount;
+    cashFlow.closingAmount = cashFlow.grandTotal;
+    cashFlow.todaysIncome = 0;
+    cashFlow.outgoingCash = 0;
+    cashFlow.borrowingCash = 0;
 
     await cashFlow.save();
 
@@ -213,7 +94,33 @@ exports.updateClosingAmount = async (req, res) => {
       grandTotal: cashFlow.grandTotal,
     });
   } catch (error) {
-    console.error("Error updating closing amount:", error);
+    console.error("Error resetting daily values:", error);
+    res.status(500).json({ status: "error", error: "Internal server error" });
+  }
+};
+
+exports.getHistoricalData = async (req, res) => {
+  const { date } = req.query;
+  
+  try {
+    const queryDate = new Date(date);
+    queryDate.setHours(0, 0, 0, 0); // Set to start of the day
+
+    console.log("Query Date:", queryDate); // Log the query date
+
+    const cashFlow = await CashFlow.findOne({ date: queryDate });
+
+    if (!cashFlow) {
+      console.log("No cash flow found for date:", queryDate); // Log if no document found
+      return res.status(404).json({ status: "error", error: "Cash flow not found" });
+    }
+
+    res.json({
+      status: "ok",
+      cashFlow,
+    });
+  } catch (error) {
+    console.error("Error fetching historical data:", error);
     res.status(500).json({ status: "error", error: "Internal server error" });
   }
 };

@@ -27,6 +27,7 @@ const billInvoice = new mongoose.Schema({
   pendingAmount: { type: String },
   grossAmount: { type: String },
   totalAmount: { type: String },
+  totalInvoicePiadAmount: { type: String },
   Invoice: [childSchema], 
   billNo: { type: String, unique: true }, 
 });

@@ -86,7 +86,7 @@ const UnPaidInvoice = () => {
 
   return (
     <ScrollView style={{ backgroundColor: '#cccccc', width: '100%', padding: 10 }}>
-      <View style={{ gap: 10 }}>
+      <View style={{ gap: 10,paddingBottom:20 }}>
         {invoices.filter((invoice) => invoice.paidstatus === 'UnPaid').map((invoice) => (
           <View key={invoice._id} style={{ padding: 10, backgroundColor: '#fff', gap: 20, borderRadius: 8 }}>
             <View style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between' }}>
@@ -211,7 +211,7 @@ const UnPaidInvoice = () => {
             </View>
             <Pressable
               onPress={() => updatePaidStatus(invoice._id)}
-              style={{ width: '100%', backgroundColor: '#80bfff', padding: 5, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', borderRadius: 5 }}
+              style={{ width: '100%', backgroundColor: 'green', padding: 5, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', borderRadius: 5 }}
             >
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Change status to Paid</Text>
             </Pressable>

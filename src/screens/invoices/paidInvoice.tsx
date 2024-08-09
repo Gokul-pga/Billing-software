@@ -70,8 +70,8 @@ const PaidInvoice = () => {
 
   return (
     <ScrollView style={{ backgroundColor: '#cccccc', width: '100%', padding: 10 }}>
-      <View style={{gap:10}}>
-        {invoice.filter((index) => index.paidstatus == "Paid").map((item, id) => (
+      <View style={{ gap: 10,paddingBottom:20 }}>
+      {invoice.filter((index) => index.paidstatus == "Paid").map((item, id) => (
           <View key={id} style={{ padding: 10, backgroundColor: '#fff', gap: 20,borderRadius:8 }}>
             <View
               style={{
